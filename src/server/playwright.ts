@@ -14,25 +14,34 @@
  * limitations under the License.
  */
 
-import * as types from '../types';
-import { TimeoutError } from '../errors';
-import { DeviceDescriptors } from '../deviceDescriptors';
-import { Chromium } from './chromium';
-import { WebKit } from './webkit';
-import { Firefox } from './firefox';
+import { Chromium } from './chromium/chromium';
+import { Clank } from './clank/clank';
+import { WebKit } from './webkit/webkit';
+import { Firefox } from './firefox/firefox';
+import * as browserPaths from '../utils/browserPaths';
+import { serverSelectors } from './selectors';
 
 export class Playwright {
-  readonly devices: types.Devices;
-  readonly errors: { TimeoutError: typeof TimeoutError };
+  readonly selectors = serverSelectors;
   readonly chromium: Chromium;
+  readonly clank: Clank;
   readonly firefox: Firefox;
   readonly webkit: WebKit;
 
-  constructor(projectRoot: string, revisions: { chromium_revision: string, firefox_revision: string, webkit_revision: string }) {
-    this.devices = DeviceDescriptors;
-    this.errors = { TimeoutError };
-    this.chromium = new Chromium(projectRoot, revisions.chromium_revision);
-    this.firefox = new Firefox(projectRoot, revisions.firefox_revision);
-    this.webkit = new WebKit(projectRoot, revisions.webkit_revision);
+  constructor(packagePath: string, browsers: browserPaths.BrowserDescriptor[]) {
+    const chromium = browsers.find(browser => browser.name === 'chromium');
+    this.chromium = new Chromium(packagePath, chromium!);
+
+    const firefox = browsers.find(browser => browser.name === 'firefox');
+    this.firefox = new Firefox(packagePath, firefox!);
+
+    const webkit = browsers.find(browser => browser.name === 'webkit');
+    this.webkit = new WebKit(packagePath, webkit!);
+
+    this.clank = new Clank(packagePath, {
+      name: 'clank',
+      revision: '0',
+      download: false
+    });
   }
 }
